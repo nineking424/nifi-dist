@@ -107,9 +107,9 @@
             <input type="text" id="username" value="admin" placeholder="admin">
             <label for="password">비밀번호:</label>
             <input type="password" id="password" value="ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB" placeholder="password">
-            <button onclick="authenticate()">인증 토큰 발급</button>
+            <button onclick="authenticate()">Basic Auth 인증</button>
             <div id="authStatus"></div>
-            <label for="token">Access Token:</label>
+            <label for="token">Basic Auth Token:</label>
             <input type="text" id="token" readonly>
         </div>
 
@@ -164,21 +164,25 @@
             const password = document.getElementById('password').value;
             const authStatus = document.getElementById('authStatus');
             
+            // Basic Authentication 방식으로 변경
+            const basicAuth = btoa(`${username}:${password}`);
+            document.getElementById('token').value = basicAuth;
+            
             try {
-                const response = await fetch(`${baseUrl}/nifi-api/access/token`, {
-                    method: 'POST',
+                // 인증 테스트를 위해 current-user 엔드포인트 호출
+                const response = await fetch(`${baseUrl}/nifi-api/flow/current-user`, {
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                        'Authorization': `Basic ${basicAuth}`,
+                        'Accept': 'application/json'
+                    }
                 });
                 
                 if (response.ok) {
-                    const token = await response.text();
-                    document.getElementById('token').value = token;
+                    const userData = await response.json();
                     authStatus.className = 'auth-status auth-success';
-                    authStatus.textContent = '✓ 인증 성공! 토큰이 발급되었습니다.';
-                    showResponse('인증 성공!\nToken: ' + token, false);
+                    authStatus.textContent = '✓ Basic Auth 인증 성공! 사용자: ' + (userData.identity || username);
+                    showResponse('인증 성공!\nBasic Auth: ' + basicAuth + '\n\nUser Info:\n' + JSON.stringify(userData, null, 2), false);
                 } else {
                     const error = await response.text();
                     authStatus.className = 'auth-status auth-fail';
@@ -204,7 +208,8 @@
             };
             
             if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+                // Basic Auth 사용
+                headers['Authorization'] = `Basic ${token}`;
             }
             
             if (method !== 'GET' && requestBody) {
@@ -267,7 +272,7 @@
         // 페이지 로드 시 초기 설정
         window.onload = function() {
             // 기본 테스트를 위한 초기 설정
-            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n1. 먼저 "인증 토큰 발급" 버튼을 클릭하여 인증을 완료하세요.\n2. 그 다음 원하는 API 엔드포인트를 테스트하세요.');
+            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n1. 먼저 "Basic Auth 인증" 버튼을 클릭하여 인증을 완료하세요.\n2. 그 다음 원하는 API 엔드포인트를 테스트하세요.\n\n참고: NiFi 1.28.1은 HTTP에서 Bearer 토큰을 지원하지 않으므로 Basic Auth를 사용합니다.');
         };
     </script>
 </body>
