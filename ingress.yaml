@@ -4,12 +4,16 @@ metadata:
   name: nifi-ingress
   namespace: nifi
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-ProxyScheme $scheme;
+      proxy_set_header X-ProxyHost $host;
+      proxy_set_header X-ProxyPort $server_port;
+      proxy_set_header X-ProxyContextPath /;
 spec:
   ingressClassName: nginx
   rules:

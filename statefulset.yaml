@@ -37,6 +37,8 @@ spec:
           value: "admin"
         - name: SINGLE_USER_CREDENTIALS_PASSWORD
           value: "ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB"
+        - name: NIFI_WEB_PROXY_HOST
+          value: "nifi.nks.stjeong.com"
         resources:
           requests:
             memory: "2Gi"
