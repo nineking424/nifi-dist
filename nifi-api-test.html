@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NiFi API 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: red;
+            background-color: #ffe0e0;
+        }
+        .success {
+            color: green;
+            background-color: #e0ffe0;
+        }
+        .endpoint-list {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .endpoint-item {
+            margin: 5px 0;
+            cursor: pointer;
+            color: #0066cc;
+        }
+        .endpoint-item:hover {
+            text-decoration: underline;
+        }
+        .auth-status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .auth-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .auth-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NiFi REST API 테스트 도구</h1>
+        
+        <div class="section">
+            <h2>서버 설정</h2>
+            <label for="baseUrl">Base URL:</label>
+            <input type="text" id="baseUrl" value="https://nifi.nks.stjeong.com" placeholder="https://nifi.nks.stjeong.com">
+        </div>
+
+        <div class="section">
+            <h2>인증</h2>
+            <label for="username">사용자명:</label>
+            <input type="text" id="username" value="admin" placeholder="admin">
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" value="ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB" placeholder="password">
+            <button onclick="authenticate()">인증 토큰 발급</button>
+            <div id="authStatus"></div>
+            <label for="token">Access Token:</label>
+            <input type="text" id="token" readonly>
+        </div>
+
+        <div class="section">
+            <h2>API 엔드포인트 테스트</h2>
+            <div class="endpoint-list">
+                <h3>주요 엔드포인트:</h3>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/access/config')">GET /nifi-api/access/config - 접근 설정 확인</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/about')">GET /nifi-api/flow/about - NiFi 정보</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/current-user')">GET /nifi-api/flow/current-user - 현재 사용자 정보</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/cluster/summary')">GET /nifi-api/flow/cluster/summary - 클러스터 요약</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/process-groups/root')">GET /nifi-api/flow/process-groups/root - 루트 프로세스 그룹</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/status')">GET /nifi-api/flow/status - 플로우 상태</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/flow/config')">GET /nifi-api/flow/config - 플로우 설정</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/system-diagnostics')">GET /nifi-api/system-diagnostics - 시스템 진단</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/counters')">GET /nifi-api/counters - 카운터 정보</div>
+                <div class="endpoint-item" onclick="setEndpoint('/nifi-api/controller/config')">GET /nifi-api/controller/config - 컨트롤러 설정</div>
+            </div>
+            
+            <label for="endpoint">엔드포인트:</label>
+            <input type="text" id="endpoint" value="/nifi-api/flow/about" placeholder="/nifi-api/flow/about">
+            
+            <label for="method">메소드:</label>
+            <select id="method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            
+            <label for="requestBody">요청 본문 (JSON):</label>
+            <textarea id="requestBody" rows="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            
+            <button onclick="testApi()">API 테스트</button>
+            <button onclick="clearResponse()">응답 지우기</button>
+        </div>
+
+        <div class="section">
+            <h2>응답</h2>
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        function setEndpoint(endpoint) {
+            document.getElementById('endpoint').value = endpoint;
+        }
+
+        async function authenticate() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const authStatus = document.getElementById('authStatus');
+            
+            try {
+                const response = await fetch(`${baseUrl}/nifi-api/access/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+                
+                if (response.ok) {
+                    const token = await response.text();
+                    document.getElementById('token').value = token;
+                    authStatus.className = 'auth-status auth-success';
+                    authStatus.textContent = '✓ 인증 성공! 토큰이 발급되었습니다.';
+                    showResponse('인증 성공!\nToken: ' + token, false);
+                } else {
+                    const error = await response.text();
+                    authStatus.className = 'auth-status auth-fail';
+                    authStatus.textContent = '✗ 인증 실패: ' + response.status;
+                    showResponse(`인증 실패!\nStatus: ${response.status}\nError: ${error}`, true);
+                }
+            } catch (error) {
+                authStatus.className = 'auth-status auth-fail';
+                authStatus.textContent = '✗ 인증 오류: ' + error.message;
+                showResponse('인증 오류: ' + error.message, true);
+            }
+        }
+
+        async function testApi() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const endpoint = document.getElementById('endpoint').value;
+            const method = document.getElementById('method').value;
+            const token = document.getElementById('token').value;
+            const requestBody = document.getElementById('requestBody').value;
+            
+            const headers = {
+                'Accept': 'application/json',
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            if (method !== 'GET' && requestBody) {
+                headers['Content-Type'] = 'application/json';
+            }
+            
+            const options = {
+                method: method,
+                headers: headers,
+            };
+            
+            if (method !== 'GET' && requestBody) {
+                try {
+                    options.body = JSON.stringify(JSON.parse(requestBody));
+                } catch (e) {
+                    showResponse('요청 본문이 유효한 JSON이 아닙니다: ' + e.message, true);
+                    return;
+                }
+            }
+            
+            try {
+                showResponse(`요청 중... ${method} ${baseUrl}${endpoint}`);
+                
+                const response = await fetch(`${baseUrl}${endpoint}`, options);
+                const contentType = response.headers.get('content-type');
+                
+                let responseData;
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                    responseData = JSON.stringify(responseData, null, 2);
+                } else {
+                    responseData = await response.text();
+                }
+                
+                const statusInfo = `Status: ${response.status} ${response.statusText}\n`;
+                const headersInfo = `Headers:\n${Array.from(response.headers.entries())
+                    .map(([key, value]) => `  ${key}: ${value}`)
+                    .join('\n')}\n\n`;
+                
+                if (response.ok) {
+                    showResponse(statusInfo + headersInfo + 'Response:\n' + responseData, false);
+                } else {
+                    showResponse(statusInfo + headersInfo + 'Error Response:\n' + responseData, true);
+                }
+            } catch (error) {
+                showResponse('요청 오류: ' + error.message, true);
+            }
+        }
+
+        function showResponse(message, isError = false) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = message;
+            responseDiv.className = isError ? 'response error' : 'response';
+        }
+
+        function clearResponse() {
+            document.getElementById('response').textContent = '';
+        }
+
+        // 페이지 로드 시 초기 설정
+        window.onload = function() {
+            // 기본 테스트를 위한 초기 설정
+            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n1. 먼저 "인증 토큰 발급" 버튼을 클릭하여 인증을 완료하세요.\n2. 그 다음 원하는 API 엔드포인트를 테스트하세요.');
+        };
+    </script>
+</body>
+</html>
