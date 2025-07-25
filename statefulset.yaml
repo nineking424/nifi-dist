@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: nifi
-        image: apache/nifi:1.23.2
+        image: apache/nifi:1.28.1
         ports:
         - containerPort: 8080
           name: web
