@@ -170,13 +170,11 @@ data:
         <script>
             // Set base URL based on current location
             window.onload = function() {
-                const protocol = window.location.protocol;
-                const host = window.location.host;
-                const baseUrl = protocol + '//' + host;
-                document.getElementById('baseUrl').placeholder = baseUrl;
+                // 현재 페이지가 /nifi-api-test.html 에서 실행 중이라고 가정
+                // NiFi API는 같은 도메인의 /nifi-api/ 경로에서 사용 가능
+                document.getElementById('baseUrl').value = '';
                 
-                showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n이제 동일한 도메인에서 실행되므로 CORS 에러가 발생하지 않습니다!\n\n"익명 접근 확인" 버튼을 클릭하여 시작하세요.');
-                checkAnonymousAccess();
+                showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n로컬 파일로 실행 중입니다. 포트 포워딩을 사용하여 접근하세요:\nkubectl port-forward -n nifi svc/nifi 8080:8080\n\n그 다음 브라우저에서 이 파일을 열고 Base URL에 http://localhost:8080을 입력하세요.');
             };
 
             function setEndpoint(endpoint) {

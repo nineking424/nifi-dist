@@ -98,7 +98,8 @@
         <div class="section">
             <h2>서버 설정</h2>
             <label for="baseUrl">Base URL:</label>
-            <input type="text" id="baseUrl" value="https://nifi.nks.stjeong.com" placeholder="https://nifi.nks.stjeong.com">
+            <input type="text" id="baseUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
+            <small style="color: #666;">포트 포워딩 사용: kubectl port-forward -n nifi svc/nifi 8080:8080</small>
         </div>
 
         <div class="section">
@@ -314,7 +315,7 @@
         // 페이지 로드 시 초기 설정
         window.onload = function() {
             // 기본 테스트를 위한 초기 설정
-            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n현재 NiFi는 익명 접근을 허용하고 있어 인증이 필요하지 않습니다.\n바로 API 엔드포인트를 테스트할 수 있습니다.\n\n"익명 접근 확인" 버튼을 클릭하여 현재 사용자 정보를 확인하세요.');
+            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n사용 방법:\n1. 터미널에서 포트 포워딩 실행: kubectl port-forward -n nifi svc/nifi 8080:8080\n2. Base URL이 http://localhost:8080으로 설정되어 있는지 확인\n3. "익명 접근 확인" 버튼을 클릭하여 시작\n\n참고: 로컬 파일로 실행하면 CORS 에러가 발생할 수 있습니다.');
             checkAnonymousAccess();
         };
     </script>
