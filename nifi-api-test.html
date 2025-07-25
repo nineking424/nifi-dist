@@ -103,14 +103,21 @@
 
         <div class="section">
             <h2>인증</h2>
-            <label for="username">사용자명:</label>
-            <input type="text" id="username" value="admin" placeholder="admin">
-            <label for="password">비밀번호:</label>
-            <input type="password" id="password" value="ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB" placeholder="password">
-            <button onclick="authenticate()">Basic Auth 인증</button>
+            <div class="auth-status auth-success">
+                ✓ NiFi가 익명 접근을 허용하고 있습니다. 인증이 필요하지 않습니다.
+            </div>
+            <button onclick="checkAnonymousAccess()">익명 접근 확인</button>
+            <button onclick="toggleAuthentication()" style="background-color: #ff9800;">인증 사용 (선택사항)</button>
+            <div id="auth-section" style="display: none;">
+                <label for="username">사용자명:</label>
+                <input type="text" id="username" value="admin" placeholder="admin">
+                <label for="password">비밀번호:</label>
+                <input type="password" id="password" value="ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB" placeholder="password">
+                <button onclick="authenticate()">Basic Auth 인증</button>
+                <label for="token">Basic Auth Token:</label>
+                <input type="text" id="token" readonly>
+            </div>
             <div id="authStatus"></div>
-            <label for="token">Basic Auth Token:</label>
-            <input type="text" id="token" readonly>
         </div>
 
         <div class="section">
@@ -156,6 +163,40 @@
     <script>
         function setEndpoint(endpoint) {
             document.getElementById('endpoint').value = endpoint;
+        }
+
+        function toggleAuthentication() {
+            const authSection = document.getElementById('auth-section');
+            authSection.style.display = authSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function checkAnonymousAccess() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const authStatus = document.getElementById('authStatus');
+            
+            try {
+                const response = await fetch(`${baseUrl}/nifi-api/flow/current-user`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    authStatus.className = 'auth-status auth-success';
+                    authStatus.textContent = '✓ 익명 접근 확인됨. 사용자: ' + userData.identity + ' (모든 권한 활성화)';
+                    showResponse('익명 접근 성공!\n\nUser Info:\n' + JSON.stringify(userData, null, 2), false);
+                } else {
+                    authStatus.className = 'auth-status auth-fail';
+                    authStatus.textContent = '✗ 익명 접근 불가. 인증이 필요합니다.';
+                    showResponse('익명 접근 실패. 인증을 사용하세요.', true);
+                }
+            } catch (error) {
+                authStatus.className = 'auth-status auth-fail';
+                authStatus.textContent = '✗ 접근 오류: ' + error.message;
+                showResponse('접근 오류: ' + error.message, true);
+            }
         }
 
         async function authenticate() {
@@ -207,7 +248,8 @@
                 'Accept': 'application/json',
             };
             
-            if (token) {
+            // 토큰이 있는 경우에만 Authorization 헤더 추가
+            if (token && token.trim() !== '') {
                 // Basic Auth 사용
                 headers['Authorization'] = `Basic ${token}`;
             }
@@ -272,7 +314,8 @@
         // 페이지 로드 시 초기 설정
         window.onload = function() {
             // 기본 테스트를 위한 초기 설정
-            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n1. 먼저 "Basic Auth 인증" 버튼을 클릭하여 인증을 완료하세요.\n2. 그 다음 원하는 API 엔드포인트를 테스트하세요.\n\n참고: NiFi 1.28.1은 HTTP에서 Bearer 토큰을 지원하지 않으므로 Basic Auth를 사용합니다.');
+            showResponse('NiFi API 테스트 도구가 준비되었습니다.\n\n현재 NiFi는 익명 접근을 허용하고 있어 인증이 필요하지 않습니다.\n바로 API 엔드포인트를 테스트할 수 있습니다.\n\n"익명 접근 확인" 버튼을 클릭하여 현재 사용자 정보를 확인하세요.');
+            checkAnonymousAccess();
         };
     </script>
 </body>
