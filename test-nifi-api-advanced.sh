@@ -163,7 +163,7 @@ echo -e "루트 프로세스 그룹 ID: ${GREEN}$ROOT_PG_ID${NC}"
 
 # GenerateFlowFile 프로세서 테스트
 echo -e "\n${BLUE}=== GenerateFlowFile 프로세서 테스트 ===${NC}"
-PROCESSOR_ID=$(create_processor "$ROOT_PG_ID" "Test GenerateFlowFile" "org.apache.nifi.processors.standard.GenerateFlowFile")
+PROCESSOR_ID=$(create_processor "$ROOT_PG_ID" "Test GenerateFlowFile" "org.apache.nifi.processors.standard.GenerateFlowFile" | tail -1)
 
 if [ ! -z "$PROCESSOR_ID" ]; then
     sleep 2
@@ -180,16 +180,16 @@ fi
 
 # LogMessage 프로세서 테스트
 echo -e "\n${BLUE}=== LogMessage 프로세서 테스트 ===${NC}"
-PROCESSOR_ID=$(create_processor "$ROOT_PG_ID" "Test LogMessage" "org.apache.nifi.processors.standard.LogMessage")
+PROCESSOR_ID=$(create_processor "$ROOT_PG_ID" "Test LogMessage" "org.apache.nifi.processors.standard.LogMessage" | tail -1)
 
 if [ ! -z "$PROCESSOR_ID" ]; then
     # 프로세서 설정 업데이트
     echo -e "\n${YELLOW}프로세서 설정 업데이트${NC}"
     
-    local current=$(curl -s "$BASE_URL/nifi-api/processors/$PROCESSOR_ID")
-    local version=$(echo "$current" | grep -o '"version":[0-9]*' | head -1 | cut -d':' -f2)
+    current=$(curl -s "$BASE_URL/nifi-api/processors/$PROCESSOR_ID")
+    version=$(echo "$current" | grep -o '"version":[0-9]*' | head -1 | cut -d':' -f2)
     
-    local data=$(cat <<EOF
+    data=$(cat <<EOF
 {
   "revision": {
     "version": $version
