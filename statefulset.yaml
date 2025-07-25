@@ -46,7 +46,7 @@ spec:
             cpu: "2000m"
         volumeMounts:
         - name: nifi-data
-          mountPath: /opt/nifi/nifi-current/conf
+          mountPath: /opt/nifi/nifi-current/data
         - name: nifi-logs
           mountPath: /opt/nifi/nifi-current/logs
         - name: nifi-flowfile-repo
