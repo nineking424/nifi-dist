@@ -36,11 +36,13 @@ spec:
           name: follower
         - containerPort: 3888
           name: election
+        command:
+        - sh
+        - -c
+        - |
+          export ZOOKEEPER_SERVER_ID=$(echo $HOSTNAME | sed 's/.*-//' | awk '{print $1+1}')
+          exec /etc/confluent/docker/run
         env:
-        - name: ZOOKEEPER_SERVER_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['zookeeper.io/server-id']
         - name: ZOOKEEPER_CLIENT_PORT
           value: "2181"
         - name: ZOOKEEPER_TICK_TIME
@@ -55,13 +57,6 @@ spec:
           value: "/var/lib/zookeeper/data"
         - name: ZOOKEEPER_LOG_DIR
           value: "/var/lib/zookeeper/log"
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
         volumeMounts:
         - name: zookeeper-data
           mountPath: /var/lib/zookeeper/data
@@ -84,9 +79,10 @@ spec:
         - sh
         - -c
         - |
+          mkdir -p /var/lib/zookeeper/data /var/lib/zookeeper/log
           SERVER_ID=$(echo $HOSTNAME | sed 's/.*-//')
           echo $((SERVER_ID + 1)) > /var/lib/zookeeper/data/myid
-          mkdir -p /var/lib/zookeeper/log
+          chown -R 1000:1000 /var/lib/zookeeper
         volumeMounts:
         - name: zookeeper-data
           mountPath: /var/lib/zookeeper/data
