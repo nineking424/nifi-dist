@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zookeeper-ingress
+  namespace: nifi
+  annotations:
+    nginx.ingress.kubernetes.io/tcp-services-configmap: "nifi/zookeeper-tcp"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: zookeeper.nks.stjeong.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: zookeeper
+            port:
+              number: 2181
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zookeeper-tcp
+  namespace: nifi
+data:
+  2181: "nifi/zookeeper:2181"

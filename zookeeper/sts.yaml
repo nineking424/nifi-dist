@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: nifi
+  labels:
+    app: zookeeper
+spec:
+  serviceName: zookeeper-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - zookeeper
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: zookeeper
+        image: confluentinc/cp-zookeeper:7.4.0
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: follower
+        - containerPort: 3888
+          name: election
+        env:
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['zookeeper.io/server-id']
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name: ZOOKEEPER_INIT_LIMIT
+          value: "10"
+        - name: ZOOKEEPER_SYNC_LIMIT
+          value: "5"
+        - name: ZOOKEEPER_SERVERS
+          value: "zookeeper-0.zookeeper-headless.nifi.svc.cluster.local:2888:3888;zookeeper-1.zookeeper-headless.nifi.svc.cluster.local:2888:3888;zookeeper-2.zookeeper-headless.nifi.svc.cluster.local:2888:3888"
+        - name: ZOOKEEPER_DATA_DIR
+          value: "/var/lib/zookeeper/data"
+        - name: ZOOKEEPER_LOG_DIR
+          value: "/var/lib/zookeeper/log"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /var/lib/zookeeper/data
+        - name: zookeeper-log
+          mountPath: /var/lib/zookeeper/log
+        livenessProbe:
+          tcpSocket:
+            port: 2181
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          tcpSocket:
+            port: 2181
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      initContainers:
+      - name: init-zookeeper
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          SERVER_ID=$(echo $HOSTNAME | sed 's/.*-//')
+          echo $((SERVER_ID + 1)) > /var/lib/zookeeper/data/myid
+          mkdir -p /var/lib/zookeeper/log
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /var/lib/zookeeper/data
+        - name: zookeeper-log
+          mountPath: /var/lib/zookeeper/log
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
+  - metadata:
+      name: zookeeper-log
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 2Gi
