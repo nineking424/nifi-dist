@@ -16,6 +16,22 @@ spec:
       labels:
         app: nifi
     spec:
+      initContainers:
+      - name: copy-test-page
+        image: busybox:1.36
+        command: 
+        - sh
+        - -c
+        - |
+          echo "Copying test page to NiFi work/docs directory..."
+          mkdir -p /opt/nifi-docs/
+          cp /tmp/test-page/nifi-api-test.html /opt/nifi-docs/
+          echo "Test page copied successfully"
+        volumeMounts:
+        - name: test-page
+          mountPath: /tmp/test-page
+        - name: nifi-docs
+          mountPath: /opt/nifi-docs
       containers:
       - name: nifi
         image: apache/nifi:1.28.1
@@ -47,6 +63,8 @@ spec:
             memory: "4Gi"
             cpu: "2000m"
         volumeMounts:
+        - name: nifi-docs
+          mountPath: /opt/nifi/nifi-current/work/docs/custom
         - name: nifi-data
           mountPath: /opt/nifi/nifi-current/data
         - name: nifi-logs
@@ -69,6 +87,12 @@ spec:
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 10
+      volumes:
+      - name: test-page
+        configMap:
+          name: nifi-test-page
+      - name: nifi-docs
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: nifi-data
