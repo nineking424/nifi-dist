@@ -9,11 +9,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header X-ProxyScheme $scheme;
-      proxy_set_header X-ProxyHost $host;
-      proxy_set_header X-ProxyPort $server_port;
-      proxy_set_header X-ProxyContextPath /;
+    nginx.ingress.kubernetes.io/proxy-headers-hash-max-size: "512"
+    nginx.ingress.kubernetes.io/proxy-headers-hash-bucket-size: "128"
 spec:
   ingressClassName: nginx
   rules:
