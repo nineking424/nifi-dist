@@ -23,7 +23,7 @@ spec:
         - sh
         - -c
         - |
-          echo "Copying test page to NiFi work/docs directory..."
+          echo "Copying test page to NiFi custom-docs directory..."
           mkdir -p /opt/nifi-docs/
           cp /tmp/test-page/nifi-api-test.html /opt/nifi-docs/
           echo "Test page copied successfully"
@@ -44,6 +44,20 @@ spec:
           name: site-to-site
         - containerPort: 6007
           name: load-balance
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - |
+                # NiFi가 시작된 후 테스트 페이지 복사
+                sleep 30
+                if [ -f /opt/nifi/nifi-current/custom-docs/nifi-api-test.html ]; then
+                  echo "Copying test page to NiFi web root..."
+                  cp /opt/nifi/nifi-current/custom-docs/nifi-api-test.html /opt/nifi/nifi-current/lib/
+                  echo "Test page copied successfully"
+                fi
         env:
         - name: NIFI_WEB_HTTP_PORT
           value: "8080"
@@ -64,7 +78,7 @@ spec:
             cpu: "2000m"
         volumeMounts:
         - name: nifi-docs
-          mountPath: /opt/nifi/nifi-current/work/docs/custom
+          mountPath: /opt/nifi/nifi-current/custom-docs
         - name: nifi-data
           mountPath: /opt/nifi/nifi-current/data
         - name: nifi-logs
